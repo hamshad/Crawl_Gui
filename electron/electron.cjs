@@ -1,9 +1,5 @@
-import { app, BrowserWindow } from 'electron';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
 
 let mainWindow;
 
@@ -22,17 +18,18 @@ function createWindow() {
     show: false,
   });
 
-  // Load the app
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
-  }
+  // Load files from dist folder (same directory as electron.cjs)
+  const distPath = path.join(__dirname, 'dist', 'index.html');
+  console.log('Loading:', distPath);
+  
+  mainWindow.loadFile(distPath);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    console.log('App shown!');
   });
+
+  mainWindow.setMenuBarVisibility(false);
 }
 
 app.whenReady().then(createWindow);
