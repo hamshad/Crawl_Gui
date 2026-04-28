@@ -39,3 +39,7 @@ Thumbs.db
 
 # Crawl4ai / Playwright cache
 ~/Library/Caches/ms-playwright/
+
+# Electron
+electron/node_modules/
+electron/dist/

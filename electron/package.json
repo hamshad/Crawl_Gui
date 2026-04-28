@@ -1,0 +1,21 @@
+{
+  "name": "crawl4ai-electron",
+  "version": "1.0.0",
+  "description": "Crawl4ai GUI with Electron + Svelte",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm run backend\" \"npm run electron:dev\"",
+    "backend": "cd .. && .venv/bin/python backend.py",
+    "vite:dev": "vite",
+    "electron:dev": "vite build && electron .",
+    "build": "vite build",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "concurrently": "^8.2.0",
+    "electron": "^28.0.0",
+    "svelte": "^4.2.0",
+    "vite": "^5.0.0"
+  }
+}
