@@ -2,7 +2,7 @@
 
 ## Current Position
 - Phase 01 (React UI): Plan 03 complete
-- Phase 02 (Backend Streaming): Plan 01 of 04 complete
+- Phase 02 (Backend Streaming): Plan 02 of 04 complete
 
 ## Key Decisions
 - React + Vite + TypeScript for frontend
@@ -19,22 +19,26 @@
 - Raw Flask Response + Queue bridge for async crawl4ai (not flask-queue-sse)
 - @microsoft/fetch-event-source for POST-based SSE in frontend
 - crawl4ai hooks emit progress events; markdown only at completion
+- Hooks emit both progress and log events for real-time feedback
+- Queue stores dicts; JSON encoding happens once in generate() at yield point
 
 ## Blockers
 - None
 
-## Recent Decisions (Phase 02-01)
-- SSE endpoint created with raw Flask Response + generator + Queue (not flask-queue-sse) per research recommendation
-- Threading bridge pattern established for async crawl4ai integration in subsequent plans
+## Recent Decisions (Phase 02-02)
+- Implemented run_crawl with asyncio.run() bridge pattern
+- CrawlerRunConfig passes hooks to crawler.arun()
+- Hooks (before_goto, after_goto, on_execution_started, before_retrieve_html) emit progress/log events
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
 |--------|------|----------|-------|-------|
 | 02 | 01 | 5min | 2 | 1 |
+| 02 | 02 | 4min | 3 | 1 |
 
 ## Pending Todos
-- Execute Phase 02 plans (02-02, 02-03, 02-04)
+- Execute Phase 02 plans (02-03, 02-04)
 
 ## Session Info
-- Last session: 2026-04-29T10:43:12Z
-- Stopped at: Completed 02-01-PLAN.md
+- Last session: 2026-04-29T10:51:59Z
+- Stopped at: Completed 02-02-PLAN.md
