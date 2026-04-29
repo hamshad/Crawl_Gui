@@ -83,7 +83,7 @@ def crawl_stream():
     def run_crawl():
         async def do_crawl():
             # Signal start
-            event_queue.put(json.dumps({"event": "start", "url": url}))
+            event_queue.put({"event": "start", "url": url})
 
             # Configure browser
             browser_config = BrowserConfig(
@@ -94,19 +94,19 @@ def crawl_stream():
 
             # Define hooks to emit progress events
             async def before_goto(page, context, goto_url, **kwargs):
-                event_queue.put(json.dumps({"event": "progress", "status": "page_loading", "url": goto_url}))
+                event_queue.put({"event": "progress", "status": "page_loading", "url": goto_url})
                 return page
 
             async def after_goto(page, context, **kwargs):
-                event_queue.put(json.dumps({"event": "progress", "status": "page_loaded"}))
+                event_queue.put({"event": "progress", "status": "page_loaded"})
                 return page
 
             async def on_execution_started(page, context, **kwargs):
-                event_queue.put(json.dumps({"event": "progress", "status": "extracting"}))
+                event_queue.put({"event": "progress", "status": "extracting"})
                 return page
 
             async def before_retrieve_html(page, context, **kwargs):
-                event_queue.put(json.dumps({"event": "progress", "status": "html_retrieved"}))
+                event_queue.put({"event": "progress", "status": "html_retrieved"})
                 return page
 
             # Create run config with hooks
@@ -121,13 +121,13 @@ def crawl_stream():
 
             # Run the crawl
             async with AsyncWebCrawler(config=browser_config) as crawler:
-                event_queue.put(json.dumps({"event": "progress", "status": "browser_started"}))
+                event_queue.put({"event": "progress", "status": "browser_started"})
                 result = await crawler.arun(url=url, config=run_config)
 
                 if result.success:
-                    event_queue.put(json.dumps({"event": "done", "success": True, "markdown": result.markdown}))
+                    event_queue.put({"event": "done", "success": True, "markdown": result.markdown})
                 else:
-                    event_queue.put(json.dumps({"event": "done", "success": False, "error": result.error_message}))
+                    event_queue.put({"event": "done", "success": False, "error": result.error_message})
 
             # Signal completion to generator
             event_queue.put(None)
@@ -141,7 +141,7 @@ def crawl_stream():
             item = q.get()
             if item is None:
                 break
-            yield f"data: {item}\n\n"
+            yield f"data: {json.dumps(item)}\n\n"
         yield "data: [DONE]\n\n"
 
     return Response(
