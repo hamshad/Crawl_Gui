@@ -15,6 +15,15 @@ CORS(app)
 def create_browser_config(options=None):
     if options is None:
         options = {}
+    
+    # Note: enable_stealth uses playwright-stealth to modify browser fingerprints.
+    # For sophisticated anti-bot bypass (PerimeterX, advanced Cloudflare), use:
+    #   from crawl4ai.browser_profiles import UndetectedAdapter
+    #   from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+    #   adapter = UndetectedAdapter()
+    #   strategy = AsyncPlaywrightCrawlerStrategy(browser_adapter=adapter)
+    #   crawler = AsyncWebCrawler(crawler_strategy=strategy, ...)
+    
     return BrowserConfig(
         browser_type="chromium",
         headless=options.get("headless", True),
