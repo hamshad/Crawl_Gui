@@ -11,22 +11,29 @@ cd /Users/moksha/Moksha/Hamshad/Crawling
 ### 2. Build and Run Desktop App (Terminal 2)
 ```bash
 cd /Users/moksha/Moksha/Hamshad/Crawling/electron
-npm run build
-npx electron .
-```
-
-## Or use the start script
-```bash
-cd /Users/moksha/Moksha/Hamshad/Crawling
-./start.sh
+npm run dev
 ```
 
 ## Ports
-- Backend: 5001
-- App runs standalone (no server needed after build)
+- Backend: 5001 (Flask SSE streaming API)
+- Electron app connects to backend at `http://127.0.0.1:5001`
 
 ## What was built:
-- React + Vite frontend (in electron/ folder)
-- Python backend (in backend.py)
-- Clean dark UI withJetBrains Mono + Plus Jakarta Sans fonts
-- Logs panel with timestamps
+- **Electron + React + Vite + TypeScript** frontend (in `electron/` folder)
+- **Clean dark UI** with shadcn/ui components, Quicksand font, Phosphor icons
+- **SSE streaming backend** (in `backend.py`) — real-time progress events and markdown output
+- **Markdown rendering** with `react-markdown` + `remark-gfm`
+- No Tkinter GUI (`crawl_gui.py` removed)
+
+## Architecture
+```
+electron/ (React frontend) → SSE POST → backend.py (Flask, port 5001) → crawl4ai
+```
+
+## Features
+- URL input with crawl trigger
+- Real-time progress updates (Loading page → Extracting → Processing)
+- Live log streaming during crawl
+- Formatted markdown output with GFM support
+- Stop crawl button (abort mid-crawl)
+- Error handling with user-friendly messages
