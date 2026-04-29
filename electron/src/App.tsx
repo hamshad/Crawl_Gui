@@ -136,7 +136,7 @@ export default function App() {
         {/* Status Area */}
         {isStreaming && (
           <div className="space-y-3">
-            <Progress value={30} />
+            <Progress className="animate-pulse" />
             <div className="flex items-center gap-2">
               <Badge variant="default">
                 <Spinner size={12} weight="bold" className="animate-spin mr-1" />
@@ -182,8 +182,8 @@ export default function App() {
           </Card>
         )}
 
-        {/* Log Messages */}
-        {logs.length > 0 && (
+        {/* Log Messages - show during streaming and after */}
+        {(logs.length > 0 || isStreaming) && (
           <Card>
             <CardHeader>
               <span className="font-semibold text-muted-foreground">Logs</span>
