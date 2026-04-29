@@ -2,7 +2,7 @@
 
 ## Current Position
 - Phase 01 (React UI): Plan 03 complete
-- Phase 02 (Backend Streaming): Plan 03 of 04 complete
+- Phase 02 (Backend Streaming): Plan 04 of 04 complete
 
 ## Key Decisions
 - React + Vite + TypeScript for frontend
@@ -21,14 +21,19 @@
 - crawl4ai hooks emit progress events; markdown only at completion
 - Hooks emit both progress and log events for real-time feedback
 - Queue stores dicts; JSON encoding happens once in generate() at yield point
+- AbortController for SSE connection cleanup (not raw fetch timeouts)
+- isStreaming state (replaces isLoading) for clearer streaming semantics
 
 ## Blockers
 - None
 
-## Recent Decisions (Phase 02-02)
-- Implemented run_crawl with asyncio.run() bridge pattern
-- CrawlerRunConfig passes hooks to crawler.arun()
-- Hooks (before_goto, after_goto, on_execution_started, before_retrieve_html) emit progress/log events
+## Recent Decisions (Phase 02-04)
+- Frontend uses fetchEventSource POST to /crawl/stream (not polling)
+- Real-time log streaming with onmessage handler for log/progress/done events
+- Stop button with AbortController for manual SSE connection cancellation
+- Logs display during streaming (not just after) for real-time feedback
+- AbortController for SSE connection cleanup (not raw fetch timeouts)
+- isStreaming state (replaces isLoading) for clearer streaming semantics
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
@@ -36,10 +41,11 @@
 | 02 | 01 | 5min | 2 | 1 |
 | 02 | 02 | 4min | 3 | 1 |
 | 02 | 03 | 1min | 2 | 3 |
+| 02 | 04 | 9min | 3 | 1 |
 
 ## Pending Todos
-- Execute Phase 02 plan 02-04
+- Phase 02 complete - ready for next phase
 
 ## Session Info
-- Last session: 2026-04-29T10:56:25Z
-- Stopped at: Completed 02-03-PLAN.md
+- Last session: 2026-04-29T11:08:47Z
+- Stopped at: Completed 02-04-PLAN.md
