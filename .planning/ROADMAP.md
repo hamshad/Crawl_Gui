@@ -14,7 +14,7 @@
 - [DESIGN-02] Phosphor icons
 - [DESIGN-03] Quicksand font
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 - [x] 01-01-PLAN.md — React + Vite + Tailwind + shadcn foundation
 - [x] 01-02-PLAN.md — Crawling UI with markdown rendering
 
