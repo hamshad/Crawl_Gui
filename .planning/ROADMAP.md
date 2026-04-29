@@ -41,11 +41,13 @@
 
 **Requirements:**
 - [x] [ANTIBOT-01] Stealth mode toggle via enable_stealth in BrowserConfig
-- [ ] [ANTIBOT-02] Undetected browser adapter for sophisticated anti-bot bypass
-- [ ] [ANTIBOT-03] Proxy configuration support with rotation
+- [x] [ANTIBOT-02] Undetected browser adapter for sophisticated anti-bot bypass
+- [x] [ANTIBOT-03] Proxy configuration support with rotation
 - [x] [OVERLAY-01] Overlay removal (remove_overlay_elements) and consent popup removal
 - [x] [CACHE-01] Cache mode control via CrawlerRunConfig (ENABLED, BYPASS, DISABLED)
 
 **Plans:** 2/2 plans complete
 - [x] 03-01-PLAN.md — Add CrawlerRunConfig, stealth mode, overlay removal, caching
-- [ ] 03-02-PLAN.md — Add undetected browser, proxy support, crawl stats
+- [x] 03-02-PLAN.md — Add undetected browser, proxy support, crawl stats
+
+**Status:** ✓ Complete (2026-04-29)
