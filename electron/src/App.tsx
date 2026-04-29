@@ -163,7 +163,7 @@ export default function App() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Spider size={18} weight="duotone" className="text-primary" />
+                <Bug size={18} weight="duotone" className="text-primary" />
                 <span className="font-semibold">Result</span>
               </div>
             </CardHeader>
