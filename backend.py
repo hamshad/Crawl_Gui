@@ -166,4 +166,4 @@ def health():
 if __name__ == "__main__":
     import sys
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5001
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host="127.0.0.1", port=port, debug=False, threaded=True)

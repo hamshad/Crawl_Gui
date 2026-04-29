@@ -89,8 +89,8 @@ export default function App() {
         }
         setIsStreaming(false)
         abortControllerRef.current = null
-        // Return to stop the retry loop
-        return
+        // Throw to stop fetchEventSource from retrying indefinitely
+        throw err
       },
     })
   }
