@@ -25,42 +25,46 @@ interface LogEntry {
 export default function App() {
   const [url, setUrl] = useState('')
   const [markdown, setMarkdown] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const handleCrawl = async () => {
+  const handleCrawl = () => {
     if (!url.trim()) return
 
-    setIsLoading(true)
+    setIsStreaming(true)
     setError(null)
     setMarkdown(null)
     setLogs([])
 
-    try {
-      const response = await fetch('http://127.0.0.1:5001/crawl', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      })
+    fetchEventSource('http://127.0.0.1:5001/crawl/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      onmessage(ev) {
+        const data = JSON.parse(ev.data)
 
-      const data = await response.json()
-
-      if (data.success) {
-        setMarkdown(data.markdown || data.result || '')
-        setLogs(data.logs || [])
-      } else {
-        setError(data.error || 'Crawl failed with an unknown error')
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to connect to the crawling server. Make sure it is running on port 5001.'
-      )
-    } finally {
-      setIsLoading(false)
-    }
+        if (data.event === 'log') {
+          setLogs((prev) => [...prev, { msg: data.msg, level: data.level }])
+        } else if (data.event === 'progress') {
+          // Progress events for status tracking - could update a progress indicator
+          console.log('Progress:', data.status)
+        } else if (data.event === 'done') {
+          if (data.success) {
+            setMarkdown(data.markdown || '')
+          } else {
+            setError(data.error || 'Crawl failed')
+          }
+          setIsStreaming(false)
+        }
+      },
+      onerror(err) {
+        setError(err instanceof Error ? err.message : 'SSE connection error')
+        setIsStreaming(false)
+        // Return to stop the retry loop (don't throw)
+        return
+      },
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -98,21 +102,21 @@ export default function App() {
               </span>
             </div>
             <div className="flex gap-2">
-              <Input
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
-                className="flex-1"
-              />
+               <Input
+                 type="url"
+                 placeholder="https://example.com"
+                 value={url}
+                 onChange={(e) => setUrl(e.target.value)}
+                 onKeyDown={handleKeyDown}
+                 disabled={isStreaming}
+                 className="flex-1"
+               />
               <Button
                 onClick={handleCrawl}
-                disabled={isLoading || !url.trim()}
+                disabled={isStreaming || !url.trim()}
                 variant="default"
               >
-                {isLoading ? (
+                 {isStreaming ? (
                   <>
                     <Spinner size={18} weight="bold" className="animate-spin" />
                     <span>Crawling...</span>
@@ -130,7 +134,7 @@ export default function App() {
         </Card>
 
         {/* Status Area */}
-        {isLoading && (
+        {isStreaming && (
           <div className="space-y-3">
             <Progress value={30} />
             <div className="flex items-center gap-2">
@@ -142,14 +146,14 @@ export default function App() {
           </div>
         )}
 
-        {markdown && !isLoading && (
+        {markdown && !isStreaming && (
           <Badge variant="success">
             <CheckCircle size={12} weight="bold" className="mr-1" />
             Complete
           </Badge>
         )}
 
-        {error && !isLoading && (
+        {error && !isStreaming && (
           <div className="space-y-2">
             <Badge variant="destructive">
               <Warning size={12} weight="bold" className="mr-1" />
@@ -160,7 +164,7 @@ export default function App() {
         )}
 
         {/* Markdown Output Card */}
-        {markdown && !isLoading && (
+        {markdown && !isStreaming && (
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
