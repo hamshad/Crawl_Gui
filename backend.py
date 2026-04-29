@@ -92,21 +92,25 @@ def crawl_stream():
                 channel="chromium"
             )
 
-            # Define hooks to emit progress events
+            # Define hooks to emit progress and log events
             async def before_goto(page, context, goto_url, **kwargs):
                 event_queue.put({"event": "progress", "status": "page_loading", "url": goto_url})
+                event_queue.put({"event": "log", "msg": f"Navigating to {goto_url}", "level": "info"})
                 return page
 
             async def after_goto(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "page_loaded"})
+                event_queue.put({"event": "log", "msg": "Page loaded successfully", "level": "info"})
                 return page
 
             async def on_execution_started(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "extracting"})
+                event_queue.put({"event": "log", "msg": "Content extraction started", "level": "info"})
                 return page
 
             async def before_retrieve_html(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "html_retrieved"})
+                event_queue.put({"event": "log", "msg": "HTML retrieved, processing...", "level": "info"})
                 return page
 
             # Create run config with hooks
