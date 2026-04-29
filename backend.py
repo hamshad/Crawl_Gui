@@ -6,17 +6,55 @@ import threading
 from queue import Queue
 
 from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig
+from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, CacheMode
 
 app = Flask(__name__)
 CORS(app)
 
 
-def create_browser_config():
+def create_browser_config(options=None):
+    if options is None:
+        options = {}
     return BrowserConfig(
         browser_type="chromium",
-        headless=True,
-        channel="chromium"
+        headless=options.get("headless", True),
+        channel="chromium",
+        enable_stealth=options.get("stealth_mode", False)
+    )
+
+
+# Cache mode mapping: string -> CacheMode enum
+CACHE_MODE_MAP = {
+    "enabled": CacheMode.ENABLED,
+    "bypass": CacheMode.BYPASS,
+    "disabled": CacheMode.DISABLED,
+    "read_only": CacheMode.READ_ONLY,
+    "write_only": CacheMode.WRITE_ONLY,
+}
+
+
+def create_crawler_config(options=None):
+    """Create CrawlerRunConfig with advanced options.
+    
+    Args:
+        options: Dict with keys:
+            - cache_mode: "enabled" | "bypass" | "disabled" | "read_only" | "write_only" (default: "bypass")
+            - remove_overlays: Remove popups/modals blocking content (default: True)
+            - remove_consent: Remove GDPR/cookie consent popups (default: True)
+    """
+    if options is None:
+        options = {}
+    
+    cache_mode_str = options.get("cache_mode", "bypass")
+    cache_mode = CACHE_MODE_MAP.get(cache_mode_str.lower(), CacheMode.BYPASS)
+    
+    return CrawlerRunConfig(
+        cache_mode=cache_mode,
+        remove_overlay_elements=options.get("remove_overlays", True),
+        remove_consent_popups=options.get("remove_consent", True),
+        wait_until="networkidle",
+        page_timeout=60000,
+        verbose=True
     )
 
 
