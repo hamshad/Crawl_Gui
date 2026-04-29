@@ -1,8 +1,8 @@
 # State
 
 ## Current Position
-- Phase 01 (React UI): Planning in progress
-- No phases executed yet
+- Phase 01 (React UI): Plan 01 complete, Plan 02 pending
+- 1 of 2 plans executed
 
 ## Key Decisions
 - React + Vite + TypeScript for frontend
@@ -13,9 +13,10 @@
 - Phosphor icons (not Lucide)
 - Quicksand font
 - Always load built files (no Vite dev server in Electron)
+- ESM module system throughout (type: module in package.json)
 
 ## Blockers
 - None
 
 ## Pending Todos
-- Execute Phase 01 plans
+- Execute Phase 01 Plan 02
