@@ -1,12 +1,12 @@
 # State
 
 ## Current Plan
-- Phase 03 (Advanced Crawling): Plan 01 of 02 complete
+- Phase 03 (Advanced Crawling): Plan 02 of 02 complete
 
 ## Current Position
 - Phase 01 (React UI): Plan 03 complete
 - Phase 02 (Backend Streaming): Plan 04 of 04 complete
-- Phase 03 (Advanced Crawling): Plan 01 of 02 complete
+- Phase 03 (Advanced Crawling): Plan 02 of 02 complete
 
 ## Key Decisions
 - React + Vite + TypeScript for frontend
@@ -38,6 +38,12 @@
 - Logs display during streaming (not just after) for real-time feedback
 - AbortController for SSE connection cleanup (not raw fetch timeouts)
 - isStreaming state (replaces isLoading) for clearer streaming semantics
+- crawl4ai hooks emit progress events; markdown only at completion
+
+## Recent Decisions (Phase 03)
+- Used Python version check (>=3.10) for crawl4ai compatibility
+- UndetectedAdapter with AsyncPlaywrightCrawlerStrategy for anti-bot bypass
+- proxy_config and max_retries in create_crawler_config() options
 
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
@@ -47,10 +53,11 @@
 | 02 | 03 | 1min | 2 | 3 |
 | 02 | 04 | 9min | 3 | 1 |
 | 03 | 01 | 1min | 3 | 1 |
+| 03 | 02 | 3min | 3 | 1 |
 
 ## Pending Todos
-- Phase 03 in progress
+- None - Phase 03 complete
 
 ## Session Info
-- Last session: 2026-04-29T13:25:51Z
-- Stopped at: Completed 03-01-PLAN.md
+- Last session: 2026-04-29T13:30:46Z
+- Stopped at: Completed 03-02-PLAN.md
