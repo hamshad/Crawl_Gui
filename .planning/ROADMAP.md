@@ -34,3 +34,18 @@
 - [x] 02-02-PLAN.md — Crawl4ai integration with hooks emitting events
 - [x] 02-03-PLAN.md — SSE endpoint returns proper events (start, log, progress, done)
 - [x] 02-04-PLAN.md — Frontend SSE consumer with fetchEventSource
+
+## Phase 03: Advanced Crawling
+
+**Goal:** Add anti-bot bypass (stealth mode, undetected browser), overlay/popup removal, and caching to handle protected sites like those with PerimeterX.
+
+**Requirements:**
+- [ ] [ANTIBOT-01] Stealth mode toggle via enable_stealth in BrowserConfig
+- [ ] [ANTIBOT-02] Undetected browser adapter for sophisticated anti-bot bypass
+- [ ] [ANTIBOT-03] Proxy configuration support with rotation
+- [ ] [OVERLAY-01] Overlay removal (remove_overlay_elements) and consent popup removal
+- [ ] [CACHE-01] Cache mode control via CrawlerRunConfig (ENABLED, BYPASS, DISABLED)
+
+**Plans:** 2 plans
+- [ ] 03-01-PLAN.md — Add CrawlerRunConfig, stealth mode, overlay removal, caching
+- [ ] 03-02-PLAN.md — Add undetected browser, proxy support, crawl stats
