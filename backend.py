@@ -3,7 +3,7 @@ from flask_cors import CORS
 import asyncio
 import logging
 from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig
+from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 import json
 import threading
 from queue import Queue
@@ -81,10 +81,58 @@ def crawl_stream():
     event_queue = Queue()
 
     def run_crawl():
-        # Placeholder - full implementation in 02-02
-        event_queue.put(json.dumps({"event": "start", "url": url}))
-        event_queue.put(json.dumps({"event": "done", "success": True, "markdown": "# Placeholder markdown", "logs": []}))
-        event_queue.put(None)  # sentinel
+        async def do_crawl():
+            # Signal start
+            event_queue.put(json.dumps({"event": "start", "url": url}))
+
+            # Configure browser
+            browser_config = BrowserConfig(
+                browser_type="chromium",
+                headless=True,
+                channel="chromium"
+            )
+
+            # Define hooks to emit progress events
+            async def before_goto(page, context, goto_url, **kwargs):
+                event_queue.put(json.dumps({"event": "progress", "status": "page_loading", "url": goto_url}))
+                return page
+
+            async def after_goto(page, context, **kwargs):
+                event_queue.put(json.dumps({"event": "progress", "status": "page_loaded"}))
+                return page
+
+            async def on_execution_started(page, context, **kwargs):
+                event_queue.put(json.dumps({"event": "progress", "status": "extracting"}))
+                return page
+
+            async def before_retrieve_html(page, context, **kwargs):
+                event_queue.put(json.dumps({"event": "progress", "status": "html_retrieved"}))
+                return page
+
+            # Create run config with hooks
+            run_config = CrawlerRunConfig(
+                hooks={
+                    "before_goto": before_goto,
+                    "after_goto": after_goto,
+                    "on_execution_started": on_execution_started,
+                    "before_retrieve_html": before_retrieve_html,
+                }
+            )
+
+            # Run the crawl
+            async with AsyncWebCrawler(config=browser_config) as crawler:
+                event_queue.put(json.dumps({"event": "progress", "status": "browser_started"}))
+                result = await crawler.arun(url=url, config=run_config)
+
+                if result.success:
+                    event_queue.put(json.dumps({"event": "done", "success": True, "markdown": result.markdown}))
+                else:
+                    event_queue.put(json.dumps({"event": "done", "success": False, "error": result.error_message}))
+
+            # Signal completion to generator
+            event_queue.put(None)
+
+        asyncio.run(do_crawl())
 
     threading.Thread(target=run_crawl).start()
 
