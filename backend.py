@@ -67,6 +67,46 @@ def crawl():
     result = asyncio.run(crawl_url(url))
     return jsonify(result)
 
+@app.route("/crawl/stream", methods=["POST"])
+def crawl_stream():
+    data = request.json
+    url = data.get("url", "")
+
+    if not url:
+        return jsonify({"success": False, "error": "No URL provided"}), 400
+
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    event_queue = Queue()
+
+    def run_crawl():
+        # Placeholder - full implementation in 02-02
+        event_queue.put(json.dumps({"event": "start", "url": url}))
+        event_queue.put(json.dumps({"event": "done", "success": True, "markdown": "# Placeholder markdown", "logs": []}))
+        event_queue.put(None)  # sentinel
+
+    threading.Thread(target=run_crawl).start()
+
+    def generate(q):
+        while True:
+            item = q.get()
+            if item is None:
+                break
+            yield f"data: {item}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return Response(
+        generate(event_queue),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        }
+    )
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
