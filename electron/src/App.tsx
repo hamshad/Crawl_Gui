@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Bug,
   Globe,
@@ -28,26 +28,49 @@ export default function App() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [error, setError] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  const stopStreaming = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsStreaming(false)
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopStreaming()
+    }
+  }, [stopStreaming])
 
   const handleCrawl = () => {
     if (!url.trim()) return
+
+    // Stop any existing stream first
+    stopStreaming()
 
     setIsStreaming(true)
     setError(null)
     setMarkdown(null)
     setLogs([])
 
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     fetchEventSource('http://127.0.0.1:5001/crawl/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
+      signal: abortController.signal,
       onmessage(ev) {
         const data = JSON.parse(ev.data)
 
         if (data.event === 'log') {
           setLogs((prev) => [...prev, { msg: data.msg, level: data.level }])
         } else if (data.event === 'progress') {
-          // Progress events for status tracking - could update a progress indicator
+          // Progress events for status tracking
           console.log('Progress:', data.status)
         } else if (data.event === 'done') {
           if (data.success) {
@@ -56,12 +79,17 @@ export default function App() {
             setError(data.error || 'Crawl failed')
           }
           setIsStreaming(false)
+          abortControllerRef.current = null
         }
       },
       onerror(err) {
-        setError(err instanceof Error ? err.message : 'SSE connection error')
+        // Don't set error if it was an abort (user-initiated stop)
+        if (err instanceof Error && err.name !== 'AbortError') {
+          setError(err.message || 'SSE connection error')
+        }
         setIsStreaming(false)
-        // Return to stop the retry loop (don't throw)
+        abortControllerRef.current = null
+        // Return to stop the retry loop
         return
       },
     })
@@ -112,23 +140,23 @@ export default function App() {
                  className="flex-1"
                />
               <Button
-                onClick={handleCrawl}
-                disabled={isStreaming || !url.trim()}
-                variant="default"
-              >
-                 {isStreaming ? (
-                  <>
-                    <Spinner size={18} weight="bold" className="animate-spin" />
-                    <span>Crawling...</span>
-                  </>
-                ) : (
-                  <>
-                    <Bug size={18} weight="duotone" />
-                    <span>Crawl</span>
-                    <ArrowRight size={16} weight="bold" />
-                  </>
-                )}
-              </Button>
+                 onClick={isStreaming ? stopStreaming : handleCrawl}
+                 disabled={!isStreaming && !url.trim()}
+                 variant={isStreaming ? "destructive" : "default"}
+               >
+                  {isStreaming ? (
+                   <>
+                     <Spinner size={18} weight="bold" className="animate-spin" />
+                     <span>Stop</span>
+                   </>
+                 ) : (
+                   <>
+                     <Bug size={18} weight="duotone" />
+                     <span>Crawl</span>
+                     <ArrowRight size={16} weight="bold" />
+                   </>
+                 )}
+               </Button>
             </div>
           </CardHeader>
         </Card>
