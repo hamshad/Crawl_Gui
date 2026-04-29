@@ -40,12 +40,12 @@
 **Goal:** Add anti-bot bypass (stealth mode, undetected browser), overlay/popup removal, and caching to handle protected sites like those with PerimeterX.
 
 **Requirements:**
-- [ ] [ANTIBOT-01] Stealth mode toggle via enable_stealth in BrowserConfig
+- [x] [ANTIBOT-01] Stealth mode toggle via enable_stealth in BrowserConfig
 - [ ] [ANTIBOT-02] Undetected browser adapter for sophisticated anti-bot bypass
 - [ ] [ANTIBOT-03] Proxy configuration support with rotation
-- [ ] [OVERLAY-01] Overlay removal (remove_overlay_elements) and consent popup removal
-- [ ] [CACHE-01] Cache mode control via CrawlerRunConfig (ENABLED, BYPASS, DISABLED)
+- [x] [OVERLAY-01] Overlay removal (remove_overlay_elements) and consent popup removal
+- [x] [CACHE-01] Cache mode control via CrawlerRunConfig (ENABLED, BYPASS, DISABLED)
 
 **Plans:** 2 plans
-- [ ] 03-01-PLAN.md — Add CrawlerRunConfig, stealth mode, overlay removal, caching
+- [x] 03-01-PLAN.md — Add CrawlerRunConfig, stealth mode, overlay removal, caching
 - [ ] 03-02-PLAN.md — Add undetected browser, proxy support, crawl stats
