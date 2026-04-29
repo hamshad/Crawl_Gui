@@ -42,4 +42,4 @@ Thumbs.db
 
 # Electron
 electron/node_modules/
-electron/dist/
+electron/dist/electron/tsconfig.node.tsbuildinfo
