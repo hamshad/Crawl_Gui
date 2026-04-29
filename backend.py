@@ -77,6 +77,7 @@ def create_crawler_config(options=None):
 def crawl_stream():
     data = request.json or {}
     url = data.get("url", "").strip()
+    options = data.get("options", {})
 
     if not url:
         return {"success": False, "error": "No URL provided"}, 400
@@ -88,9 +89,19 @@ def crawl_stream():
 
     def run_crawl():
         async def do_crawl():
-            event_queue.put(json.dumps({"event": "start", "url": url}))
+            # Emit start event with URL and options
+            event_queue.put(json.dumps({"event": "start", "url": url, "options": options}))
 
-            browser_config = create_browser_config()
+            # Create configs from options
+            browser_config = create_browser_config(options)
+            crawler_config = create_crawler_config(options)
+
+            # Emit config info event
+            event_queue.put(json.dumps({
+                "event": "log", 
+                "msg": f"Stealth mode: {options.get('stealth_mode', False)}, Cache: {options.get('cache_mode', 'bypass')}, Remove overlays: {options.get('remove_overlays', True)}", 
+                "level": "info"
+            }))
 
             # Hook: before navigating to URL
             async def hook_before_goto(page, context, goto_url, **kwargs):
@@ -139,6 +150,7 @@ def crawl_stream():
             async with AsyncWebCrawler(config=browser_config) as crawler:
                 result = await crawler.arun(
                     url=url,
+                    config=crawler_config,
                     before_goto=hook_before_goto,
                     after_goto=hook_after_goto,
                     on_execution_started=hook_on_execution_started,
