@@ -115,7 +115,7 @@ export default function App() {
         <div className="flex items-center gap-3 py-4">
           <Globe size={36} className="text-primary" weight="duotone" />
           <div>
-            <h1 className="text-2xl font-bold text-primary">Crawl4ai</h1>
+            <h1 className="text-2xl font-bold text-primary">Coleoptera</h1>
             <p className="text-sm text-muted-foreground">Web to Markdown</p>
           </div>
         </div>
