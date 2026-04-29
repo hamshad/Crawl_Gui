@@ -1,79 +1,38 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, Response
 from flask_cors import CORS
 import asyncio
-import logging
-from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 import json
 import threading
 from queue import Queue
 
+from crawl4ai import AsyncWebCrawler
+from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
+
 app = Flask(__name__)
 CORS(app)
 
-log_messages = []
 
-def log(msg, level="info"):
-    log_messages.append({"msg": msg, "level": level})
-    if len(log_messages) > 50:
-        log_messages.pop(0)
-
-async def crawl_url(url):
-    log(f"Initializing crawler for: {url}", "info")
-    
-    browser_config = BrowserConfig(
+def create_browser_config():
+    return BrowserConfig(
         browser_type="chromium",
         headless=True,
         channel="chromium"
     )
-    
-    log("Starting browser...", "info")
-    
-    async with AsyncWebCrawler(config=browser_config) as crawler:
-        log("Browser started, fetching URL...", "info")
-        result = await crawler.arun(url=url)
-        
-        if result.success:
-            log(f"Successfully crawled! ({len(result.markdown or '')} chars)", "success")
-            return {
-                "success": True,
-                "markdown": result.markdown,
-                "logs": log_messages.copy()
-            }
-        else:
-            log(f"Error: {result.error_message}", "error")
-            return {
-                "success": False,
-                "error": result.error_message,
-                "logs": log_messages.copy()
-            }
 
-@app.route("/crawl", methods=["POST"])
-def crawl():
-    global log_messages
-    log_messages = []
-    
-    data = request.json
-    url = data.get("url", "")
-    
-    if not url:
-        return jsonify({"success": False, "error": "No URL provided", "logs": []}), 400
-    
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-    
-    log(f"Processing URL: {url}", "info")
-    
-    result = asyncio.run(crawl_url(url))
-    return jsonify(result)
+
+# ── SSE Streaming Endpoint ──────────────────────────────────────
+# POST /crawl/stream
+# Body: {"url": "https://example.com"}
+# Returns: text/event-stream with events: start, progress, log, done
+# ─────────────────────────────────────────────────────────────────
 
 @app.route("/crawl/stream", methods=["POST"])
 def crawl_stream():
-    data = request.json
-    url = data.get("url", "")
+    data = request.json or {}
+    url = data.get("url", "").strip()
 
     if not url:
-        return jsonify({"success": False, "error": "No URL provided"}), 400
+        return {"success": False, "error": "No URL provided"}, 400
 
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
@@ -82,50 +41,42 @@ def crawl_stream():
 
     def run_crawl():
         async def do_crawl():
-            # Signal start
             event_queue.put({"event": "start", "url": url})
 
-            # Configure browser
-            browser_config = BrowserConfig(
-                browser_type="chromium",
-                headless=True,
-                channel="chromium"
-            )
+            browser_config = create_browser_config()
 
-            # Define hooks to emit progress and log events
-            async def before_goto(page, context, goto_url, **kwargs):
+            async def hook_before_goto(page, context, goto_url, **kwargs):
                 event_queue.put({"event": "progress", "status": "page_loading", "url": goto_url})
                 event_queue.put({"event": "log", "msg": f"Navigating to {goto_url}", "level": "info"})
                 return page
 
-            async def after_goto(page, context, **kwargs):
+            async def hook_after_goto(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "page_loaded"})
                 event_queue.put({"event": "log", "msg": "Page loaded successfully", "level": "info"})
                 return page
 
-            async def on_execution_started(page, context, **kwargs):
+            async def hook_on_execution_started(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "extracting"})
                 event_queue.put({"event": "log", "msg": "Content extraction started", "level": "info"})
                 return page
 
-            async def before_retrieve_html(page, context, **kwargs):
+            async def hook_before_retrieve_html(page, context, **kwargs):
                 event_queue.put({"event": "progress", "status": "html_retrieved"})
                 event_queue.put({"event": "log", "msg": "HTML retrieved, processing...", "level": "info"})
                 return page
 
-            # Create run config with hooks
             run_config = CrawlerRunConfig(
                 hooks={
-                    "before_goto": before_goto,
-                    "after_goto": after_goto,
-                    "on_execution_started": on_execution_started,
-                    "before_retrieve_html": before_retrieve_html,
+                    "before_goto": hook_before_goto,
+                    "after_goto": hook_after_goto,
+                    "on_execution_started": hook_on_execution_started,
+                    "before_retrieve_html": hook_before_retrieve_html,
                 }
             )
 
-            # Run the crawl
+            event_queue.put({"event": "progress", "status": "browser_started"})
+
             async with AsyncWebCrawler(config=browser_config) as crawler:
-                event_queue.put({"event": "progress", "status": "browser_started"})
                 result = await crawler.arun(url=url, config=run_config)
 
                 if result.success:
@@ -133,12 +84,12 @@ def crawl_stream():
                 else:
                     event_queue.put({"event": "done", "success": False, "error": result.error_message})
 
-            # Signal completion to generator
+            # Signal end of stream
             event_queue.put(None)
 
         asyncio.run(do_crawl())
 
-    threading.Thread(target=run_crawl).start()
+    threading.Thread(target=run_crawl, daemon=True).start()
 
     def generate(q):
         while True:
@@ -146,7 +97,6 @@ def crawl_stream():
             if item is None:
                 break
             yield f"data: {json.dumps(item)}\n\n"
-        yield "data: [DONE]\n\n"
 
     return Response(
         generate(event_queue),
@@ -155,13 +105,19 @@ def crawl_stream():
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
         }
     )
 
 
+# ── Health Check ─────────────────────────────────────────────────
+
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok"})
+    return {"status": "ok"}
+
+
+# ── Main ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import sys

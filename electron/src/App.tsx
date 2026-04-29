@@ -26,6 +26,7 @@ export default function App() {
   const [url, setUrl] = useState('')
   const [markdown, setMarkdown] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -70,8 +71,7 @@ export default function App() {
         if (data.event === 'log') {
           setLogs((prev) => [...prev, { msg: data.msg, level: data.level }])
         } else if (data.event === 'progress') {
-          // Progress events for status tracking
-          console.log('Progress:', data.status)
+          setCurrentStatus(data.status)
         } else if (data.event === 'done') {
           if (data.success) {
             setMarkdown(data.markdown || '')
@@ -79,17 +79,17 @@ export default function App() {
             setError(data.error || 'Crawl failed')
           }
           setIsStreaming(false)
+          setCurrentStatus(null)
           abortControllerRef.current = null
         }
       },
       onerror(err) {
-        // Don't set error if it was an abort (user-initiated stop)
         if (err instanceof Error && err.name !== 'AbortError') {
-          setError(err.message || 'SSE connection error')
+          setError(err.message || 'Connection error')
         }
         setIsStreaming(false)
+        setCurrentStatus(null)
         abortControllerRef.current = null
-        // Throw to stop fetchEventSource from retrying indefinitely
         throw err
       },
     })
@@ -168,7 +168,12 @@ export default function App() {
             <div className="flex items-center gap-2">
               <Badge variant="default">
                 <Spinner size={12} weight="bold" className="animate-spin mr-1" />
-                Crawling...
+                {currentStatus === 'page_loading' && 'Loading page...'}
+                {currentStatus === 'page_loaded' && 'Page loaded'}
+                {currentStatus === 'extracting' && 'Extracting content...'}
+                {currentStatus === 'html_retrieved' && 'Processing...'}
+                {currentStatus === 'browser_started' && 'Starting browser...'}
+                {!currentStatus && 'Crawling...'}
               </Badge>
             </div>
           </div>
