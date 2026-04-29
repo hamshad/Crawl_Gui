@@ -19,9 +19,16 @@
 - [x] 01-02-PLAN.md — Crawling UI with markdown rendering
 - [x] 01-03-PLAN.md — Fix Spider icon and CSS type declarations
 
-## Phase 02: Backend Streaming (Future)
+## Phase 02: Backend Streaming
 
-**Goal:** Add SSE streaming to Flask backend for true real-time markdown updates.
+**Goal:** Add SSE streaming to Flask backend for true real-time markdown/log updates.
 
-Plans:
-- [ ] Not yet planned
+**Requirements:**
+- [ ] [STREAM-01] SSE endpoint `/crawl/stream` with POST support
+- [ ] [STREAM-02] Frontend consumes SSE with `fetch-event-source`
+- [ ] [STREAM-03] Progress events streamed in real-time via crawl4ai hooks
+- [ ] [STREAM-04] Full markdown returned on completion in `done` event
+
+**Plans:** 1/4 plans executed
+- [ ] 02-01-PLAN.md — SSE endpoint with progress streaming
+- [ ] 02-02-PLAN.md — Frontend SSE consumer with fetch-event-source
