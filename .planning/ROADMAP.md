@@ -5,18 +5,19 @@
 **Goal:** Transform bare Electron scaffold into a polished React desktop app for URL crawling with real-time progress and formatted markdown output.
 
 **Requirements:**
-- [REACT-01] React + Vite + TypeScript in Electron
-- [SHADCN-01] shadcn/ui component styling
-- [CRAWL-01] URL input with crawl trigger
-- [CRAWL-02] Real-time updates during crawl
-- [MARKDOWN-01] Formatted markdown rendering
-- [DESIGN-01] Clean aesthetic UI, no gradients
-- [DESIGN-02] Phosphor icons
-- [DESIGN-03] Quicksand font
+- [x] [REACT-01] React + Vite + TypeScript in Electron
+- [x] [SHADCN-01] shadcn/ui component styling
+- [x] [CRAWL-01] URL input with crawl trigger
+- [x] [CRAWL-02] Real-time updates during crawl
+- [x] [MARKDOWN-01] Formatted markdown rendering
+- [x] [DESIGN-01] Clean aesthetic UI, no gradients
+- [x] [DESIGN-02] Phosphor icons
+- [x] [DESIGN-03] Quicksand font
 
-**Plans:** 2/2 plans complete
+**Plans:** 3/3 plans complete
 - [x] 01-01-PLAN.md — React + Vite + Tailwind + shadcn foundation
 - [x] 01-02-PLAN.md — Crawling UI with markdown rendering
+- [x] 01-03-PLAN.md — Fix Spider icon and CSS type declarations
 
 ## Phase 02: Backend Streaming (Future)
 
