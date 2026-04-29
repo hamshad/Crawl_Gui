@@ -29,6 +29,6 @@
 - [ ] [STREAM-03] Progress events streamed in real-time via crawl4ai hooks
 - [ ] [STREAM-04] Full markdown returned on completion in `done` event
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 - [ ] 02-01-PLAN.md — SSE endpoint with progress streaming
 - [ ] 02-02-PLAN.md — Frontend SSE consumer with fetch-event-source
