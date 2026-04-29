@@ -5,8 +5,21 @@ import json
 import threading
 from queue import Queue
 
-from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, CacheMode
+# Use Python 3.12 for crawl4ai (Python 3.9 doesn't support | Union syntax)
+import sys
+if sys.version_info >= (3, 10):
+    from crawl4ai import AsyncWebCrawler
+    from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, CacheMode
+    from crawl4ai import UndetectedAdapter
+    from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+else:
+    # Fallback - will fail at runtime if used with Python 3.9
+    AsyncWebCrawler = None
+    BrowserConfig = None
+    CrawlerRunConfig = None
+    CacheMode = None
+    UndetectedAdapter = None
+    AsyncPlaywrightCrawlerStrategy = None
 
 app = Flask(__name__)
 CORS(app)
@@ -17,12 +30,13 @@ def create_browser_config(options=None):
         options = {}
     
     # Note: enable_stealth uses playwright-stealth to modify browser fingerprints.
-    # For sophisticated anti-bot bypass (PerimeterX, advanced Cloudflare), use:
-    #   from crawl4ai.browser_profiles import UndetectedAdapter
-    #   from crawl4ai.async_crawler_strategy import AsyncPlaywrightCrawlerStrategy
+    # For sophisticated anti-bot bypass (PerimeterX, advanced Cloudflare, DataDome), use:
     #   adapter = UndetectedAdapter()
-    #   strategy = AsyncPlaywrightCrawlerStrategy(browser_adapter=adapter)
-    #   crawler = AsyncWebCrawler(crawler_strategy=strategy, ...)
+    #   strategy = AsyncPlaywrightCrawlerStrategy(browser_config=browser_config, browser_adapter=adapter)
+    #   async with AsyncWebCrawler(crawler_strategy=strategy) as crawler:
+    #       ...
+    # The undetected browser is slower but provides deep-level patches to evade CDP detection.
+    # Use options["undetected_browser"] = True to enable.
     
     return BrowserConfig(
         browser_type="chromium",
@@ -30,6 +44,32 @@ def create_browser_config(options=None):
         channel="chromium",
         enable_stealth=options.get("stealth_mode", False)
     )
+
+
+def create_crawler_strategy(browser_config, options):
+    """Create crawler strategy with optional undetected adapter.
+    
+    Args:
+        browser_config: BrowserConfig instance
+        options: Dict with options
+        
+    Returns:
+        AsyncPlaywrightCrawlerStrategy if undetected_browser=True, else None (uses default strategy)
+        
+    Note:
+        The undetected browser adapter is more resource-intensive but provides higher success rate
+        for sophisticated anti-bot systems like PerimeterX, DataDome, advanced Cloudflare.
+        Still experimental - may not work on all sites.
+    """
+    use_undetected = options.get("undetected_browser", False)
+    
+    if use_undetected and UndetectedAdapter and AsyncPlaywrightCrawlerStrategy:
+        adapter = UndetectedAdapter()
+        return AsyncPlaywrightCrawlerStrategy(
+            browser_config=browser_config,
+            browser_adapter=adapter
+        )
+    return None  # Use default strategy
 
 
 # Cache mode mapping: string -> CacheMode enum
@@ -50,6 +90,13 @@ def create_crawler_config(options=None):
             - cache_mode: "enabled" | "bypass" | "disabled" | "read_only" | "write_only" (default: "bypass")
             - remove_overlays: Remove popups/modals blocking content (default: True)
             - remove_consent: Remove GDPR/cookie consent popups (default: True)
+            - proxy_config: Single proxy str, list of proxies, or ProxyConfig object
+            - max_retries: Number of retry rounds when blocking detected (default: 0)
+            
+    Proxy config format examples:
+        - Single proxy: "http://user:pass@host:port"
+        - List of proxies: ["http://proxy1:8080", "http://proxy2:8080"]
+        - Use "direct" or ProxyConfig.DIRECT to explicitly try without proxy
     """
     if options is None:
         options = {}
@@ -57,19 +104,25 @@ def create_crawler_config(options=None):
     cache_mode_str = options.get("cache_mode", "bypass")
     cache_mode = CACHE_MODE_MAP.get(cache_mode_str.lower(), CacheMode.BYPASS)
     
+    # Get proxy config and max_retries from options
+    proxy_config = options.get("proxy_config", None)
+    max_retries = options.get("max_retries", 0)
+    
     return CrawlerRunConfig(
         cache_mode=cache_mode,
         remove_overlay_elements=options.get("remove_overlays", True),
         remove_consent_popups=options.get("remove_consent", True),
         wait_until="networkidle",
         page_timeout=60000,
-        verbose=True
+        verbose=True,
+        proxy_config=proxy_config,
+        max_retries=max_retries,
     )
 
 
 # ── SSE Streaming Endpoint ──────────────────────────────────────
 # POST /crawl/stream
-# Body: {"url": "https://example.com"}
+# Body: {"url": "https://example.com", "options": {"stealth_mode": true, "undetected_browser": false}}
 # Returns: text/event-stream with events: start, progress, log, done
 # ─────────────────────────────────────────────────────────────────
 
@@ -95,11 +148,22 @@ def crawl_stream():
             # Create configs from options
             browser_config = create_browser_config(options)
             crawler_config = create_crawler_config(options)
+            strategy = create_crawler_strategy(browser_config, options)
 
+            # Build config info message
+            config_info = {
+                "stealth_mode": options.get("stealth_mode", False),
+                "cache": options.get("cache_mode", "bypass"),
+                "remove_overlays": options.get("remove_overlays", True),
+                "undetected_browser": options.get("undetected_browser", False),
+                "proxy_config": "set" if options.get("proxy_config") else "none",
+                "max_retries": options.get("max_retries", 0),
+            }
+            
             # Emit config info event
             event_queue.put(json.dumps({
                 "event": "log", 
-                "msg": f"Stealth mode: {options.get('stealth_mode', False)}, Cache: {options.get('cache_mode', 'bypass')}, Remove overlays: {options.get('remove_overlays', True)}", 
+                "msg": f"Config: {config_info}", 
                 "level": "info"
             }))
 
@@ -147,24 +211,68 @@ def crawl_stream():
                 "event": "progress", "status": "browser_started"
             }))
 
-            async with AsyncWebCrawler(config=browser_config) as crawler:
-                result = await crawler.arun(
-                    url=url,
-                    config=crawler_config,
-                    before_goto=hook_before_goto,
-                    after_goto=hook_after_goto,
-                    on_execution_started=hook_on_execution_started,
-                    before_retrieve_html=hook_before_retrieve_html,
-                )
+            # Use strategy if undetected_browser requested
+            if strategy:
+                event_queue.put(json.dumps({
+                    "event": "log", 
+                    "msg": "Using undetected browser adapter for anti-bot bypass", 
+                    "level": "info"
+                }))
+                async with AsyncWebCrawler(crawler_strategy=strategy) as crawler:
+                    result = await crawler.arun(
+                        url=url,
+                        config=crawler_config,
+                        before_goto=hook_before_goto,
+                        after_goto=hook_after_goto,
+                        on_execution_started=hook_on_execution_started,
+                        before_retrieve_html=hook_before_retrieve_html,
+                    )
+            else:
+                async with AsyncWebCrawler(config=browser_config) as crawler:
+                    result = await crawler.arun(
+                        url=url,
+                        config=crawler_config,
+                        before_goto=hook_before_goto,
+                        after_goto=hook_after_goto,
+                        on_execution_started=hook_on_execution_started,
+                        before_retrieve_html=hook_before_retrieve_html,
+                    )
 
-                if result.success:
+            # Handle result and emit crawl stats
+            if result.success:
+                # Build crawl stats message
+                content_length = len(result.markdown) if result.markdown else 0
+                stats_msg = f"Content extracted: {content_length} chars"
+                
+                # Try to get attempts if available
+                crawl_stats = getattr(result, 'crawl_stats', None)
+                if crawl_stats:
+                    attempts = getattr(crawl_stats, 'attempts', None)
+                    if attempts is not None:
+                        stats_msg += f", Attempts: {attempts}"
+                
+                event_queue.put(json.dumps({
+                    "event": "log", "msg": stats_msg, "level": "info"
+                }))
+                
+                event_queue.put(json.dumps({
+                    "event": "done", "success": True, "markdown": result.markdown
+                }))
+            else:
+                error_msg = result.error_message or "Unknown error"
+                
+                # Check for common anti-bot blocks and provide helpful warning
+                anti_bot_keywords = ["perimeterx", "cloudflare", "datadome", "blocked", "captcha", "challenge"]
+                if any(kw in error_msg.lower() for kw in anti_bot_keywords):
                     event_queue.put(json.dumps({
-                        "event": "done", "success": True, "markdown": result.markdown
+                        "event": "log",
+                        "msg": "Anti-bot protection detected. Try enabling stealth_mode or undetected_browser.",
+                        "level": "warning"
                     }))
-                else:
-                    event_queue.put(json.dumps({
-                        "event": "done", "success": False, "error": result.error_message
-                    }))
+                
+                event_queue.put(json.dumps({
+                    "event": "done", "success": False, "error": error_msg
+                }))
 
             # Signal end of stream
             event_queue.put(None)
