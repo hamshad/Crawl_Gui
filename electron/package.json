@@ -47,7 +47,8 @@
     "mac": {
       "target": ["dmg", "zip"],
       "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
+      "identity": null,
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
     },
     "linux": {

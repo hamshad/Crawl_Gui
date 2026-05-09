@@ -77,7 +77,7 @@ jobs:
 
       - name: Build Electron app (macOS)
         if: matrix.target == 'mac-arm64'
-        run: npx electron-builder --config --publish=never -c.mac.notarize=false
+        run: npx electron-builder --config
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
