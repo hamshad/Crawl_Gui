@@ -77,7 +77,7 @@ jobs:
 
       - name: Build Electron app (macOS)
         if: matrix.target == 'mac-arm64'
-        run: npx electron-builder --config -c.mac.notarize=false
+        run: npx electron-builder --config --publish=never -c.mac.notarize=false
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,14 +89,14 @@ jobs:
 
       - name: Build Electron app (Linux)
         if: matrix.target == 'linux-x64'
-        run: npx electron-builder --config
+        run: npx electron-builder --config --publish=never
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron app (Windows)
         if: matrix.target == 'win-x64'
-        run: npx electron-builder --config
+        run: npx electron-builder --config --publish=never
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -16,8 +16,9 @@
     "preview": "vite preview",
     "start": "electron ."
   },
-  "author": "",
+  "author": "Hamshad <hiromega18@gmail.com>",
   "license": "MIT",
+  "repository": "hamshad/Coleoptera",
   "description": "Coleoptera - Web to Markdown Desktop App",
   "build": {
     "appId": "com.coleoptera.desktop",
