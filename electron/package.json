@@ -23,6 +23,7 @@
   "build": {
     "appId": "com.coleoptera.desktop",
     "productName": "Coleoptera",
+    "publish": null,
     "directories": {
       "output": "release"
     },
