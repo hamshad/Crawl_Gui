@@ -8,7 +8,7 @@
     "dev:skip-build": "electron .",
     "build": "vite build",
     "build:python": "cd .. && .venv/bin/pyinstaller --onefile --name backend-server --distpath electron/python-bin --add-data \".venv/lib/python3.12/site-packages/crawl4ai:crawl4ai\" backend.py",
-    "build:python:copy-browsers": "rm -rf playwright-browsers && mkdir -p playwright-browsers && cp -R \"$HOME/Library/Caches/ms-playwright/chromium-1208\" playwright-browsers/ && cp -R \"$HOME/Library/Caches/ms-playwright/ffmpeg-1011\" playwright-browsers/",
+    "build:python:copy-browsers": "node scripts/copy-browsers.mjs",
     "build:python:all": "npm run build:python && npm run build:python:copy-browsers",
     "build:electron": "npm run build && npm run build:python:all && electron-builder",
     "build:electron:quick": "npm run build && electron-builder",
@@ -17,7 +17,7 @@
     "start": "electron ."
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Coleoptera - Web to Markdown Desktop App",
   "build": {
     "appId": "com.coleoptera.desktop",
