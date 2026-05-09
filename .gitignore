@@ -43,3 +43,11 @@ Thumbs.db
 # Electron
 electron/node_modules/
 electron/dist/electron/tsconfig.node.tsbuildinfo
+electron/dist/
+electron/python-bin/
+electron/playwright-browsers/
+electron/release/
+
+# PyInstaller
+build/
+*.spec
