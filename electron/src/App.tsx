@@ -7,6 +7,10 @@ import {
   Spinner,
   CheckCircle,
   Warning,
+  Copy,
+  DownloadSimple,
+  ArrowsOut,
+  ArrowsIn,
 } from '@phosphor-icons/react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -38,6 +42,24 @@ export default function App() {
     }
     setIsStreaming(false)
   }, [])
+
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const copyMarkdown = useCallback(() => {
+    if (!markdown) return
+    navigator.clipboard.writeText(markdown)
+  }, [markdown])
+
+  const downloadMarkdown = useCallback(() => {
+    if (!markdown) return
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'coleoptera-result.md'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [markdown])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -198,15 +220,26 @@ export default function App() {
 
         {/* Markdown Output Card */}
         {markdown && !isStreaming && (
-          <Card>
+          <Card className={isFullscreen ? 'fixed inset-4 z-50 flex flex-col' : ''}>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bug size={18} weight="duotone" className="text-primary" />
                 <span className="font-semibold">Result</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyMarkdown}>
+                    <Copy size={16} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={downloadMarkdown}>
+                    <DownloadSimple size={16} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsFullscreen((v) => !v)}>
+                    {isFullscreen ? <ArrowsIn size={16} /> : <ArrowsOut size={16} />}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="max-h-96 overflow-auto rounded-lg bg-secondary/50 p-4 prose prose-invert prose-sm max-w-none">
+            <CardContent className={isFullscreen ? 'flex-1 overflow-auto' : ''}>
+              <div className={`overflow-auto rounded-lg bg-secondary/50 p-4 prose prose-invert prose-sm max-w-none ${isFullscreen ? 'h-full' : 'max-h-96'}`}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {markdown}
                 </ReactMarkdown>
